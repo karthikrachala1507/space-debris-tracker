@@ -1,0 +1,88 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000011;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 15px 20px;
+    background: rgba(0, 0, 20, 0.8);
+    border-bottom: 1px solid #00ffff33;
+    z-index: 100;
+}
+
+#header h1 {
+    font-size: 1.4rem;
+    color: #00ffff;
+    letter-spacing: 2px;
+}
+
+#header p {
+    font-size: 0.75rem;
+    color: #aaaaaa;
+    margin-top: 3px;
+}
+
+#main {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+#globe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#panel {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    width: 220px;
+    background: rgba(0, 0, 20, 0.85);
+    border: 1px solid #00ffff44;
+    border-radius: 8px;
+    padding: 15px;
+    z-index: 100;
+}
+
+#panel h2 {
+    color: #00ffff;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #00ffff33;
+    padding-bottom: 8px;
+}
+
+#stats div {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 0.75rem;
+    border-bottom: 1px solid #ffffff11;
+}
+
+#stats .label {
+    color: #aaaaaa;
+}
+
+#stats .value {
+    color: #00ffff;
+    font-weight: bold;
+}
