@@ -235,3 +235,70 @@ function animate() {
 
 animate();
 loadDebrisData();
+// Kessler Cascade Simulator
+let cascadeActive = false;
+let cascadeDebris = [];
+
+function triggerKesslerCascade(altitude) {
+    if (cascadeActive) return;
+    cascadeActive = true;
+    
+    let generation = 0;
+    let totalNewDebris = 0;
+
+    const interval = setInterval(() => {
+        generation++;
+        const newCount = Math.floor(10 * Math.pow(1.8, generation));
+        totalNewDebris += newCount;
+
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(newCount * 3);
+        const colors = new Float32Array(newCount * 3);
+
+        for (let i = 0; i < newCount; i++) {
+            const r = 1 + altitude + (Math.random() - 0.5) * 0.05 * generation;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.random() * Math.PI;
+            positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+            positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+            positions[i * 3 + 2] = r * Math.cos(phi);
+            // Red to orange cascade color
+            colors[i * 3] = 1;
+            colors[i * 3 + 1] = Math.max(0, 0.5 - generation * 0.1);
+            colors[i * 3 + 2] = 0;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.02,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9
+        });
+
+        const points = new THREE.Points(geometry, material);
+        scene.add(points);
+        cascadeDebris.push(points);
+
+        document.getElementById('cascade-status').innerHTML = `
+            Generation: ${generation} | New debris: +${newCount} | Total cascade debris: ${totalNewDebris}
+        `;
+
+        if (generation >= 6) {
+            clearInterval(interval);
+            cascadeActive = false;
+            document.getElementById('cascade-btn').disabled = false;
+            document.getElementById('cascade-status').innerHTML += ' — CASCADE COMPLETE';
+        }
+    }, 800);
+}
+
+function resetCascade() {
+    cascadeDebris.forEach(d => scene.remove(d));
+    cascadeDebris = [];
+    cascadeActive = false;
+    document.getElementById('cascade-status').innerHTML = 'Click Trigger to simulate';
+    document.getElementById('cascade-btn').disabled = false;
+}

@@ -16,6 +16,25 @@
         <div id="panel">
             <h2>Stats</h2>
             <div id="stats">Loading...</div>
+
+            <h2 style="margin-top:15px">Kessler Simulator</h2>
+            <p style="font-size:0.7rem;color:#aaa;margin-bottom:8px">Simulate chain reaction debris collision</p>
+            <select id="cascade-alt" style="width:100%;margin-bottom:8px;background:#000033;color:#00ffff;border:1px solid #00ffff44;padding:4px;font-size:0.75rem">
+                <option value="0.11">LEO 700km</option>
+                <option value="0.18">LEO 1000km</option>
+                <option value="0.8">MEO</option>
+            </select>
+            <button id="cascade-btn" onclick="document.getElementById('cascade-btn').disabled=true; triggerKesslerCascade(parseFloat(document.getElementById('cascade-alt').value))"
+            style="width:100%;padding:6px;background:#ff2200;color:white;border:none;border-radius:4px;cursor:pointer;font-family:monospace;margin-bottom:6px">
+            ⚡ Trigger Cascade
+            </button>
+            <button onclick="resetCascade()"
+            style="width:100%;padding:6px;background:#003333;color:#00ffff;border:1px solid #00ffff44;border-radius:4px;cursor:pointer;font-family:monospace;margin-bottom:8px">
+            ↺ Reset
+            </button>
+            <div id="cascade-status" style="font-size:0.65rem;color:#ffaa00;line-height:1.4">
+                Click Trigger to simulate
+            </div>
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
