@@ -5,121 +5,221 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space Debris Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&family=Exo+2:ital,wght@0,100;0,300;0,400;0,700;1,300&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <div id="header">
+    <!-- SCANLINE OVERLAY -->
+    <div id="scanlines"></div>
+
+    <!-- CORNER DECORATIONS -->
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
+    <!-- HEADER -->
+    <header id="header">
         <div id="header-left">
-            <h1>SPACE DEBRIS TRACKER</h1>
-            <p id="sim-time">SIM TIME: --</p>
+            <div id="logo-block">
+                <div id="logo-icon">◈</div>
+                <div>
+                    <h1>SPACE DEBRIS TRACKER</h1>
+                    <p id="subtitle">ORBITAL SURVEILLANCE SYSTEM v2.0</p>
+                </div>
+            </div>
+        </div>
+        <div id="header-center">
+            <div id="sim-time-block">
+                <span class="hdr-label">SIM TIME</span>
+                <span id="sim-time">--:--:-- UTC</span>
+            </div>
         </div>
         <div id="header-right">
-            <span class="tag red">LEO CRITICAL</span>
-            <span class="tag cyan">LIVE SIM</span>
+            <div class="status-pill red blink">● LEO CRITICAL</div>
+            <div class="status-pill cyan">◉ LIVE</div>
         </div>
-    </div>
+    </header>
 
+    <!-- CANVAS -->
     <canvas id="globe"></canvas>
 
+    <!-- VIEW MODE TOGGLE -->
+    <div id="view-toggle">
+        <button class="view-btn active" id="btn-standard" onclick="setView('standard')">
+            <span class="view-icon">⬡</span>
+            <span>STANDARD</span>
+        </button>
+        <button class="view-btn" id="btn-threat" onclick="setView('threat')">
+            <span class="view-icon">◈</span>
+            <span>THREAT MAP</span>
+        </button>
+    </div>
+
+    <!-- LEGEND -->
+    <div id="legend">
+        <div class="legend-title">OBJECT CLASS</div>
+        <div class="legend-item"><span class="dot" style="background:#ff2200;box-shadow:0 0 6px #ff2200"></span>DEBRIS</div>
+        <div class="legend-item"><span class="dot" style="background:#00aaff;box-shadow:0 0 6px #00aaff"></span>SATELLITE</div>
+        <div class="legend-item"><span class="dot" style="background:#ff8800;box-shadow:0 0 6px #ff8800"></span>ROCKET BODY</div>
+        <div class="legend-item"><span class="dot" style="background:#00ff44;box-shadow:0 0 6px #00ff44"></span>ISS</div>
+        <div class="legend-item"><span class="dot" style="background:#aaaaaa;box-shadow:0 0 6px #aaaaaa"></span>LUNAR</div>
+        <div class="legend-divider"></div>
+        <div class="legend-item small">— LEO 400km</div>
+        <div class="legend-item small" style="color:#ff4400">— LEO 700km</div>
+        <div class="legend-item small" style="color:#00ccff">— GEO 35786km</div>
+    </div>
+
+    <!-- RIGHT PANEL -->
     <div id="panel">
 
+        <!-- TRACKED OBJECTS -->
         <div class="section">
-            <div class="section-title">TRACKED OBJECTS</div>
+            <div class="section-title">
+                <span class="title-icon">◈</span>
+                TRACKED OBJECTS
+            </div>
             <div id="stats">Loading...</div>
         </div>
 
+        <!-- CAMERA FOCUS -->
         <div class="section">
-            <div class="section-title">CAMERA FOCUS</div>
-            <div class="btn-row">
-                <button class="btn-action" onclick="focusISS()">🛸 ISS</button>
-                <button class="btn-action" onclick="focusHubble()">🔭 Hubble</button>
+            <div class="section-title">
+                <span class="title-icon">⊕</span>
+                CAMERA FOCUS
             </div>
-            <div class="btn-row">
-                <button class="btn-action" onclick="focusMoon()">🌙 Moon</button>
-                <button class="btn-action" onclick="focusEarth()">🌍 Reset</button>
+            <div class="btn-grid">
+                <button class="btn-focus" onclick="focusISS()">
+                    <span class="focus-icon" style="color:#00ff44">🛸</span>
+                    <span>ISS</span>
+                </button>
+                <button class="btn-focus" onclick="focusHubble()">
+                    <span class="focus-icon" style="color:#ffff00">🔭</span>
+                    <span>HUBBLE</span>
+                </button>
+                <button class="btn-focus" onclick="focusMoon()">
+                    <span class="focus-icon" style="color:#aaaaaa">🌙</span>
+                    <span>MOON</span>
+                </button>
+                <button class="btn-focus" onclick="focusEarth()">
+                    <span class="focus-icon" style="color:#00aaff">🌍</span>
+                    <span>RESET</span>
+                </button>
             </div>
         </div>
 
+        <!-- VISIBILITY FILTERS -->
         <div class="section">
-            <div class="section-title">VISIBILITY FILTERS</div>
-            <div class="filter-row">
-                <label class="toggle-label">
-                    <input type="checkbox" checked onchange="toggleFilter('debris', this.checked)">
-                    <span class="toggle-dot" style="background:#ff4444"></span>
-                    Debris (LEO/MEO)
-                </label>
+            <div class="section-title">
+                <span class="title-icon">◫</span>
+                VISIBILITY FILTERS
             </div>
-            <div class="filter-row">
-                <label class="toggle-label">
-                    <input type="checkbox" checked onchange="toggleFilter('satellite', this.checked)">
-                    <span class="toggle-dot" style="background:#00aaff"></span>
-                    Satellites
+            <div class="filter-grid">
+                <label class="filter-chip" style="--chip-color:#ff2200">
+                    <input type="checkbox" checked onchange="toggleFilter('debris',this.checked)">
+                    <span class="chip-inner">DEBRIS</span>
                 </label>
-            </div>
-            <div class="filter-row">
-                <label class="toggle-label">
-                    <input type="checkbox" checked onchange="toggleFilter('rocket', this.checked)">
-                    <span class="toggle-dot" style="background:#ff8800"></span>
-                    Rocket Bodies
+                <label class="filter-chip" style="--chip-color:#00aaff">
+                    <input type="checkbox" checked onchange="toggleFilter('satellite',this.checked)">
+                    <span class="chip-inner">SATELLITE</span>
                 </label>
-            </div>
-            <div class="filter-row">
-                <label class="toggle-label">
-                    <input type="checkbox" checked onchange="toggleFilter('moon', this.checked)">
-                    <span class="toggle-dot" style="background:#aaaaaa"></span>
-                    Moon Orbiters
+                <label class="filter-chip" style="--chip-color:#ff8800">
+                    <input type="checkbox" checked onchange="toggleFilter('rocket',this.checked)">
+                    <span class="chip-inner">ROCKET</span>
+                </label>
+                <label class="filter-chip" style="--chip-color:#aaaaaa">
+                    <input type="checkbox" checked onchange="toggleFilter('moon',this.checked)">
+                    <span class="chip-inner">LUNAR</span>
                 </label>
             </div>
         </div>
 
+        <!-- SAFE ORBIT FINDER -->
         <div class="section">
-            <div class="section-title">SAFE ORBIT FINDER</div>
-            <p class="info-text">Enter mission altitude to analyse collision risk and orbital parameters</p>
-            <div class="input-row">
-                <input type="number" id="orbit-input" placeholder="Altitude (km)" min="200" max="40000" value="500">
-                <button class="btn-analyse" onclick="analyseOrbit()">ANALYSE</button>
+            <div class="section-title">
+                <span class="title-icon">⊛</span>
+                SAFE ORBIT FINDER
+            </div>
+            <p class="info-text">Analyse collision risk for planned mission altitude</p>
+            <div class="orbit-input-row">
+                <div class="orbit-input-wrap">
+                    <input type="number" id="orbit-input" placeholder="500" min="200" max="40000" value="500">
+                    <span class="orbit-unit">km</span>
+                </div>
+                <button class="btn-analyse" onclick="analyseOrbit()">SCAN</button>
             </div>
             <div id="orbit-result"></div>
         </div>
 
+        <!-- KESSLER SIMULATOR -->
         <div class="section">
             <div class="section-title">
-                KESSLER CASCADE SIMULATOR
-                <span class="info-icon" title="Kessler Syndrome: A chain reaction where one collision creates debris that causes exponentially more collisions. Proposed by NASA scientist Donald Kessler 1978. Formula: 8 × 2^generation fragments per generation.">ⓘ</span>
+                <span class="title-icon">⚠</span>
+                KESSLER CASCADE
+                <span class="info-icon" title="Kessler Syndrome: Chain reaction where one collision creates debris causing exponential further collisions. Formula: 8×2^gen fragments per generation.">ⓘ</span>
             </div>
-            <p class="info-text">Simulate exponential chain-reaction debris from a single collision event. Click any object to see its orbital path.</p>
+            <p class="info-text">Simulate exponential chain-reaction from single collision event</p>
 
-            <div class="field-label">Select Impact Zone:</div>
             <select id="cascade-alt" class="select-input">
-                <option value="0.11">LEO 700km — Most Congested</option>
-                <option value="0.157">LEO 1000km — Iridium-Cosmos Zone</option>
+                <option value="0.11">LEO 700km — Iridium Zone</option>
+                <option value="0.157">LEO 1000km — ASAT Zone</option>
                 <option value="0.8">MEO — GPS Constellation</option>
             </select>
 
-            <div class="cascade-info">
-                <div class="cascade-info-row"><span>Formula</span><span>8 × 2^gen fragments</span></div>
-                <div class="cascade-info-row"><span>Gen 6 total</span><span>~740 fragments</span></div>
-                <div class="cascade-info-row"><span>Real consequence</span><span>Orbit unusable 200+ yrs</span></div>
+            <div class="cascade-stats">
+                <div class="cs-item"><div class="cs-val">8×2ⁿ</div><div class="cs-label">FORMULA</div></div>
+                <div class="cs-item"><div class="cs-val">~740</div><div class="cs-label">GEN 6 FRAGS</div></div>
+                <div class="cs-item"><div class="cs-val">200yr</div><div class="cs-label">PERSIST</div></div>
             </div>
 
             <button id="cascade-btn" class="btn-cascade"
                 onclick="document.getElementById('cascade-btn').disabled=true; triggerKesslerCascade(parseFloat(document.getElementById('cascade-alt').value))">
-                ⚡ TRIGGER CASCADE
+                <span class="cascade-btn-icon">⚡</span> TRIGGER CASCADE
             </button>
-            <button class="btn-reset" onclick="resetCascade()">↺ RESET</button>
-            <div id="cascade-status" class="cascade-status">Select zone and trigger simulation</div>
+            <button class="btn-reset-cascade" onclick="resetCascade()">↺ RESET SIMULATION</button>
+            <div id="cascade-status" class="cascade-status">Select impact zone and trigger</div>
         </div>
 
     </div>
 
-    <div id="obj-info" style="display:none">
+    <!-- OBJECT INFO PANEL -->
+    <div id="obj-info">
+        <div class="obj-info-header">
+            <span id="obj-info-type-badge"></span>
+            <button class="obj-close" onclick="closeObjInfo()">✕</button>
+        </div>
         <div id="obj-info-content"></div>
-        <button onclick="document.getElementById('obj-info').style.display='none'; if(orbitPathLine){masterGroup.remove(orbitPathLine);moonSelfPivot.remove(orbitPathLine);orbitPathLine=null;selectedObj=null;}">✕ CLOSE</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="js/main.js"></script>
+    <script>
+    // View mode toggle
+    let currentView = 'standard';
+    function setView(mode) {
+        currentView = mode;
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + mode).classList.add('active');
+        // Apply threat map color overlay
+        if (mode === 'threat') {
+            document.getElementById('globe').style.filter = 'saturate(0.3) hue-rotate(180deg) brightness(0.8)';
+            document.getElementById('scanlines').style.opacity = '0.08';
+        } else {
+            document.getElementById('globe').style.filter = 'none';
+            document.getElementById('scanlines').style.opacity = '0.03';
+        }
+    }
+
+    function closeObjInfo() {
+        document.getElementById('obj-info').classList.remove('visible');
+        if(typeof orbitPathLine !== 'undefined' && orbitPathLine) {
+            masterGroup.remove(orbitPathLine);
+            moonSelfPivot.remove(orbitPathLine);
+            orbitPathLine = null;
+            selectedObj = null;
+        }
+    }
+    </script>
 </body>
 </html>

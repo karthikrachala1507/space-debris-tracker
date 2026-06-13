@@ -595,36 +595,76 @@ function showOrbitPath(obj, parent) {
         moonSelfPivot.remove(orbitPathLine);
         orbitPathLine = null;
     }
-    if (selectedObj === obj) { selectedObj = null; return; } // click again to deselect
-
+    if (selectedObj === obj) { selectedObj = null; return; }
     selectedObj = obj;
+
+    // ============================================================
+    // CORRECT orbit path formula - MUST match updateObjects exactly
+    // updateObjects uses: x = r*cos(a), y = r*sin(a)*sin(inc), z = -r*sin(a)*cos(inc)
+    // This is prograde (west to east) orbit
+    // ============================================================
     const steps = 256;
     const pts = [];
-    // Full orbit
     for (let i = 0; i <= steps; i++) {
         const angle = (i / steps) * Math.PI * 2;
         pts.push(new THREE.Vector3(
             obj.r * Math.cos(angle),
             obj.r * Math.sin(angle) * Math.sin(obj.inclination),
-            obj.r * Math.sin(angle) * Math.cos(obj.inclination)
+            -obj.r * Math.sin(angle) * Math.cos(obj.inclination)  // NEGATED z = prograde
         ));
     }
-    // Direction arrow at current position
-    const arrowAngle = obj.angle;
-    const arrowNext  = obj.angle + 0.15;
-    const p1 = new THREE.Vector3(obj.r*Math.cos(arrowAngle), obj.r*Math.sin(arrowAngle)*Math.sin(obj.inclination), obj.r*Math.sin(arrowAngle)*Math.cos(obj.inclination));
-    const p2 = new THREE.Vector3(obj.r*Math.cos(arrowNext), obj.r*Math.sin(arrowNext)*Math.sin(obj.inclination), obj.r*Math.sin(arrowNext)*Math.cos(obj.inclination));
+
+    // Color by type
+    const col = obj.type==='ISS' ? 0x00ff44
+              : obj.type==='DEBRIS' ? 0xff3300
+              : obj.type==='ROCKET BODY' ? 0xff8800
+              : 0x00aaff;
 
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const col = obj.type==='ISS' ? 0x00ff44 : obj.type==='DEBRIS' ? 0xff4444 : obj.type==='ROCKET BODY' ? 0xff8800 : 0x00aaff;
-    const mat = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.6 });
+    const mat = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.55 });
     orbitPathLine = new THREE.Line(geo, mat);
 
-    // Arrow
-    const arrowGeo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
-    const arrowMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+    // Direction arrow - shows actual current travel direction
+    // Use 3 points to make arrow: behind, current, ahead
+    const a0 = obj.angle - 0.12;
+    const a1 = obj.angle;
+    const a2 = obj.angle + 0.12;
+
+    const behind = new THREE.Vector3(
+        obj.r * Math.cos(a0),
+        obj.r * Math.sin(a0) * Math.sin(obj.inclination),
+        -obj.r * Math.sin(a0) * Math.cos(obj.inclination)
+    );
+    const current = new THREE.Vector3(
+        obj.r * Math.cos(a1),
+        obj.r * Math.sin(a1) * Math.sin(obj.inclination),
+        -obj.r * Math.sin(a1) * Math.cos(obj.inclination)
+    );
+    const ahead = new THREE.Vector3(
+        obj.r * Math.cos(a2),
+        obj.r * Math.sin(a2) * Math.sin(obj.inclination),
+        -obj.r * Math.sin(a2) * Math.cos(obj.inclination)
+    );
+
+    // Arrow line showing direction of travel
+    const arrowGeo = new THREE.BufferGeometry().setFromPoints([behind, current, ahead]);
+    const arrowMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, linewidth: 2 });
     const arrowLine = new THREE.Line(arrowGeo, arrowMat);
     orbitPathLine.add(arrowLine);
+
+    // Velocity vector - tangent to orbit at current position
+    // Tangent direction: derivative of position wrt angle
+    const tangent = new THREE.Vector3(
+        -obj.r * Math.sin(a1),
+        obj.r * Math.cos(a1) * Math.sin(obj.inclination),
+        -obj.r * Math.cos(a1) * Math.cos(obj.inclination)
+    ).normalize();
+
+    const velEnd = current.clone().add(tangent.multiplyScalar(obj.r * 0.12));
+    const velGeo = new THREE.BufferGeometry().setFromPoints([current, velEnd]);
+    const velMat = new THREE.LineBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.8 });
+    const velLine = new THREE.Line(velGeo, velMat);
+    orbitPathLine.add(velLine);
 
     parent.add(orbitPathLine);
 }
@@ -815,26 +855,27 @@ function showObjectInfo(obj) {
     const period = isEarth ? ((2*Math.PI*Math.sqrt(Math.pow(a,3)/GM))/3600).toFixed(2) : 'N/A';
     const velocity = isEarth ? (Math.sqrt(GM/a)/1000).toFixed(2) : 'N/A';
     const inc = (obj.inclination*180/Math.PI).toFixed(1);
-    const cols={ISS:'#00ff44',SATELLITE:'#00aaff',DEBRIS:'#ff4444','ROCKET BODY':'#ff8800'};
-    const c=cols[obj.type]||'#fff';
-    document.getElementById('obj-info').style.display='block';
-    document.getElementById('obj-info-content').innerHTML=`
-        <div style="color:${c};font-weight:bold;margin-bottom:6px;font-size:0.78rem">${obj.name}</div>
-        <div>Type: <span style="color:${c}">${obj.type}</span></div>
-        <div>Altitude: <span style="color:#00ccff">~${altKm} km</span></div>
-        <div>Orbit Zone: <span style="color:#00ccff">${zone}</span></div>
-        <div>Inclination: <span style="color:#00ccff">${inc}°</span></div>
-        <div>Orbital Velocity: <span style="color:#00ccff">${velocity} km/s</span></div>
-        <div>Orbital Period: <span style="color:#00ccff">${period} hrs</span></div>
-        <div style="color:#556677;font-size:0.6rem;margin-top:4px">Click orbit line to deselect</div>
-    `;
+    const cols = {ISS:'#00ff44', SATELLITE:'#00aaff', DEBRIS:'#ff4444', 'ROCKET BODY':'#ff8800'};
+    const c = cols[obj.type] || '#fff';
+    const badge = document.getElementById('obj-info-type-badge');
+    badge.textContent = obj.type;
+    badge.style.cssText = 'background:' + c + '22;border:1px solid ' + c + '55;color:' + c + ';font-family:Rajdhani,sans-serif;font-size:0.55rem;font-weight:700;letter-spacing:3px;padding:2px 8px;border-radius:2px';
+    document.getElementById('obj-info-content').innerHTML =
+        '<div style="color:' + c + ';font-family:Rajdhani,sans-serif;font-weight:700;font-size:0.82rem;margin-bottom:8px;letter-spacing:1px">' + obj.name + '</div>' +
+        '<div class="info-row"><span class="info-key">ALTITUDE</span><span class="info-val">~' + altKm + ' km</span></div>' +
+        '<div class="info-row"><span class="info-key">ZONE</span><span class="info-val">' + zone + '</span></div>' +
+        '<div class="info-row"><span class="info-key">INCLINATION</span><span class="info-val">' + inc + '°</span></div>' +
+        '<div class="info-row"><span class="info-key">VELOCITY</span><span class="info-val">' + velocity + ' km/s</span></div>' +
+        '<div class="info-row"><span class="info-key">PERIOD</span><span class="info-val">' + period + ' hrs</span></div>' +
+        '<div style="color:#3a5a7a;font-size:0.55rem;margin-top:6px;letter-spacing:1px">CLICK EMPTY SPACE TO DESELECT</div>';
+    document.getElementById('obj-info').classList.add('visible');
 }
 
 // ============================================================
 // TOOLTIP - hover
 // ============================================================
 const tooltip=document.createElement('div');
-tooltip.style.cssText='position:fixed;background:rgba(0,5,20,0.95);color:#00ffcc;padding:8px 12px;border-radius:6px;font-size:0.68rem;pointer-events:none;display:none;border:1px solid rgba(0,255,200,0.3);font-family:Share Tech Mono,monospace;z-index:9999;max-width:220px;line-height:1.6';
+tooltip.className='space-tooltip';
 document.body.appendChild(tooltip);
 const hoverRaycaster=new THREE.Raycaster();
 const mouse2D=new THREE.Vector2();
@@ -902,9 +943,9 @@ document.getElementById('stats').innerHTML=`
     <div><span class="label">Debris</span><span class="value" style="color:#ff4444">${earthObjects.filter(o=>o.type==='DEBRIS').length}</span></div>
     <div><span class="label">Satellites</span><span class="value" style="color:#00aaff">${earthObjects.filter(o=>o.type==='SATELLITE'||o.type==='ISS').length}</span></div>
     <div><span class="label">Rocket Bodies</span><span class="value" style="color:#ff8800">${earthObjects.filter(o=>o.type==='ROCKET BODY').length}</span></div>
-    <div><span class="label">ISS</span><span class="value" style="color:#00ff44">Active ✓</span></div>
+    <div><span class="label">ISS</span><span class="value" style="color:#00ff44">● ACTIVE</span></div>
     <div><span class="label">Moon Orbiters</span><span class="value" style="color:#aaaaaa">${moonObjects.length}</span></div>
-    <div><span class="label">LEO Risk</span><span class="value" style="color:#ff2200">CRITICAL</span></div>
+    <div><span class="label">LEO Risk</span><span class="value" style="color:#ff2200">■ CRITICAL</span></div>
     <div><span class="label">Data</span><span class="value">CelesTrak</span></div>
 `;
 
